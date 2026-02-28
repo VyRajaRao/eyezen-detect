@@ -7,6 +7,7 @@ const multer = require('multer');
 const FormData = require('form-data');
 const fetch = require('node-fetch');
 const path = require('path');
+const { rateLimit } = require('express-rate-limit');
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -22,6 +23,25 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
 });
 
+// Rate limiter: max 60 predict requests per IP per minute
+const predictLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'rate_limited', message: 'Too many requests, please try again later.' },
+});
+
+// Rate limiter for all /api routes: 120 requests per IP per minute
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api', apiLimiter);
+
 /** GET /api/health – returns Node + Python service status */
 app.get('/api/health', async (_req, res) => {
   try {
@@ -34,7 +54,7 @@ app.get('/api/health', async (_req, res) => {
 });
 
 /** POST /api/predict – accepts multipart `file`, forwards to Python service */
-app.post('/api/predict', upload.single('file'), async (req, res) => {
+app.post('/api/predict', predictLimiter, upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'no_file', message: 'No file uploaded' });
   }
@@ -89,9 +109,17 @@ app.post('/api/predict', upload.single('file'), async (req, res) => {
   });
 });
 
+// Rate limiter for SPA fallback: 200 requests per IP per minute
+const spaLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // SPA fallback in production
 if (process.env.NODE_ENV === 'production') {
-  app.get('*', (_req, res) => {
+  app.get('*', spaLimiter, (_req, res) => {
     res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
   });
 }

@@ -126,6 +126,7 @@ class RetinalValidator:
     def __init__(self) -> None:
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._threshold = float(os.environ.get("THRESHOLD_RETINAL", "0.5"))
+        self._heuristic_threshold = float(os.environ.get("THRESHOLD_RETINAL", "1.5"))
         self._model_loaded = False
 
         path = os.environ.get("MODEL_PATH_VALIDATOR", "")
@@ -159,7 +160,6 @@ class RetinalValidator:
     # Heuristic fallback
     # ------------------------------------------------------------------
     def _heuristic(self, image: Image.Image) -> bool:
-        heuristic_threshold = float(os.environ.get("THRESHOLD_RETINAL", "1.5"))
         img_rgb = np.array(image.convert("RGB"), dtype=np.float32)
         h, w = img_rgb.shape[:2]
 
@@ -168,19 +168,22 @@ class RetinalValidator:
         radius = min(h, w) * 0.42
         yy, xx = np.ogrid[:h, :w]
         inside = (xx - cx) ** 2 + (yy - cy) ** 2 <= radius ** 2
+        outside = ~inside
         gray = img_rgb.mean(axis=2)
         inside_mean = float(gray[inside].mean()) if inside.any() else 0.0
-        outside_mean = float(gray[~inside].mean()) if (~inside).any() else 255.0
-        outside_mean = max(outside_mean, 1.0)
-        circle_ratio = inside_mean / outside_mean
-        has_dark_border = outside_mean < 60.0
+        # If the image is entirely inside the circle (no outside pixels), we
+        # cannot use the dark-border criterion; default outside_mean to a high
+        # value so has_dark_border is False rather than misleadingly True.
+        outside_mean = float(gray[outside].mean()) if outside.any() else 255.0
+        circle_ratio = inside_mean / max(outside_mean, 1.0)
+        has_dark_border = outside.any() and outside_mean < 60.0
 
         # --- Feature 2: orange / reddish dominant colour -----------------
         r_mean = float(img_rgb[:, :, 0].mean())
         b_mean = float(img_rgb[:, :, 2].mean())
         color_ratio = r_mean / max(b_mean, 1.0)
 
-        return (has_dark_border and circle_ratio >= heuristic_threshold) or (
+        return (has_dark_border and circle_ratio >= self._heuristic_threshold) or (
             color_ratio >= 1.5 and r_mean >= 30.0
         )
 
