@@ -12,6 +12,33 @@ const { rateLimit } = require('express-rate-limit');
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 const PYTHON_ML_URL = (process.env.PYTHON_ML_URL || 'http://localhost:8000').replace(/\/$/, '');
+// When true (default), the Node backend returns demo placeholder predictions if the
+// Python ML service is unreachable.  Set ENABLE_DEMO_FALLBACK=false to disable.
+const ENABLE_DEMO_FALLBACK = process.env.ENABLE_DEMO_FALLBACK !== 'false';
+
+/** Placeholder prediction returned when the Python service is not running. */
+const DEMO_RESPONSE = {
+  disease: 'N/A (Demo Mode)',
+  confidence: 0,
+  is_retinal: true,
+  odir_predictions: [
+    { label: 'Normal', score: 0 },
+    { label: 'Diabetic Retinopathy', score: 0 },
+    { label: 'Glaucoma', score: 0 },
+    { label: 'Cataract', score: 0 },
+    { label: 'Age-related Macular Degeneration', score: 0 },
+    { label: 'Hypertension', score: 0 },
+    { label: 'Myopia', score: 0 },
+    { label: 'Other', score: 0 },
+  ],
+  top_odir_label: 'N/A (Demo Mode)',
+  aptos_dr_grade: null,
+  model_version: 'demo',
+  notes:
+    'Demo mode: the ML service is not running so no real predictions are available. ' +
+    'Start the Python service (see README) for actual retinal analysis.',
+  demo_mode: true,
+};
 
 // Serve built frontend in production
 if (process.env.NODE_ENV === 'production') {
@@ -75,6 +102,10 @@ app.post('/api/predict', predictLimiter, upload.single('file'), async (req, res)
     });
   } catch (err) {
     console.error('[predict] Python service unreachable:', err.message);
+    if (ENABLE_DEMO_FALLBACK) {
+      console.info('[predict] Returning demo fallback response.');
+      return res.json(DEMO_RESPONSE);
+    }
     return res.status(502).json({ error: 'gateway_error', message: 'ML service is unavailable' });
   }
 

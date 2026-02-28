@@ -61,6 +61,21 @@ export const ResultsSection = ({ result, uploadedImage, isLoading }: ResultsSect
         )}
 
         {result && (
+          <div className="space-y-6">
+            {/* Demo mode warning banner */}
+            {result.demo_mode && (
+              <div className="flex items-start gap-3 p-4 rounded-lg border border-yellow-500/40 bg-yellow-500/5 text-yellow-400 text-sm animate-fade-in-up">
+                <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-yellow-500" />
+                <div>
+                  <p className="font-semibold text-yellow-400">Demo Mode – ML service not running</p>
+                  <p className="text-yellow-400/80 mt-1">
+                    The Python ML service is unavailable so all scores below are placeholder zeros.
+                    Start the Python service (see README) to enable real predictions.
+                  </p>
+                </div>
+              </div>
+            )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Main Result Card */}
             <Card className="border-neon-cyan/30 bg-card/80 backdrop-blur-sm animate-fade-in-up">
@@ -179,6 +194,7 @@ export const ResultsSection = ({ result, uploadedImage, isLoading }: ResultsSect
                 </div>
               </CardContent>
             </Card>
+          </div>
           </div>
         )}
       </div>

@@ -46,6 +46,12 @@ const Index = () => {
 
       const result = await response.json();
       setPredictionResult(result);
+      if (result.demo_mode) {
+        toast({
+          title: "Demo mode – no ML service running",
+          description: "Showing placeholder predictions. Start the Python service for real analysis.",
+        });
+      }
     } catch (_err) {
       toast({
         title: "Connection error",

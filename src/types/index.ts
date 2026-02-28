@@ -13,4 +13,6 @@ export type PredictionResult = {
   aptos_dr_grade?: string | null;
   model_version?: string | null;
   notes?: string | null;
+  /** True when the Python ML service is unavailable and placeholder data is shown. */
+  demo_mode?: boolean;
 };

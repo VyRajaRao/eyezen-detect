@@ -143,3 +143,19 @@ class TestPredictAcceptance:
             assert "label" in pred
             assert "score" in pred
             assert isinstance(pred["score"], float)
+
+    def test_mildly_warm_image_accepted(self, client):
+        """
+        A mildly warm-toned image (R/B ratio ~1.3) that previously failed
+        the old threshold of 1.5 should now pass with the relaxed 1.1 threshold.
+        This simulates a processed / slightly desaturated fundus image.
+        """
+        # R=130, G=110, B=100 → ratio ≈ 1.30 (was rejected with old 1.5 threshold)
+        image_bytes = _make_solid_color_image(130, 110, 100, size=224)
+        response = client.post(
+            "/predict",
+            files={"file": ("mild_warm.png", image_bytes, "image/png")},
+        )
+        assert response.status_code == 200, (
+            "Mildly warm-toned image (R/B≈1.3) should be accepted by the relaxed heuristic"
+        )

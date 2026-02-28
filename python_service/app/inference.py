@@ -125,8 +125,10 @@ class RetinalValidator:
 
     def __init__(self) -> None:
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Model-mode probability threshold (applies only when a trained model is loaded)
         self._threshold = float(os.environ.get("THRESHOLD_RETINAL", "0.5"))
-        self._heuristic_threshold = float(os.environ.get("THRESHOLD_RETINAL", "1.5"))
+        # Heuristic-mode brightness-ratio threshold (separate env var to avoid conflict)
+        self._heuristic_threshold = float(os.environ.get("THRESHOLD_HEURISTIC_RETINAL", "1.5"))
         self._model_loaded = False
 
         path = os.environ.get("MODEL_PATH_VALIDATOR", "")
@@ -163,7 +165,19 @@ class RetinalValidator:
         img_rgb = np.array(image.convert("RGB"), dtype=np.float32)
         h, w = img_rgb.shape[:2]
 
+        r_mean = float(img_rgb[:, :, 0].mean())
+        b_mean = float(img_rgb[:, :, 2].mean())
+        overall_mean = (r_mean + float(img_rgb[:, :, 1].mean()) + b_mean) / 3.0
+
+        # Reject near-blank / completely dark images (< 2 % brightness on a
+        # 0–255 scale) – legitimate fundus images are never this dark.
+        if overall_mean < 5.0:
+            return False
+
         # --- Feature 1: circular bright region with dark border ----------
+        # Fundus cameras produce images with a bright circular field and a
+        # black/very-dark border.  We compare mean luminance inside a centred
+        # circle (radius 42 % of the shorter dimension) against the outside.
         cy, cx = h // 2, w // 2
         radius = min(h, w) * 0.42
         yy, xx = np.ogrid[:h, :w]
@@ -176,15 +190,34 @@ class RetinalValidator:
         # value so has_dark_border is False rather than misleadingly True.
         outside_mean = float(gray[outside].mean()) if outside.any() else 255.0
         circle_ratio = inside_mean / max(outside_mean, 1.0)
-        has_dark_border = outside.any() and outside_mean < 60.0
+        # Slightly more lenient border threshold (80 vs the old 60) to handle
+        # images with a near-dark (not pure-black) background.
+        has_dark_border = outside.any() and outside_mean < 80.0
 
-        # --- Feature 2: orange / reddish dominant colour -----------------
-        r_mean = float(img_rgb[:, :, 0].mean())
-        b_mean = float(img_rgb[:, :, 2].mean())
+        # --- Feature 2: warm / reddish colour (retina is orange-red) -----
+        # Lowered from 1.5 → 1.1 to accept processed/desaturated fundus
+        # images where R still slightly dominates B.
+        # Lowered r_mean floor from 30 → 15 to accept dim fundus images
+        # from patients with very dark retinas or heavy media opacities.
         color_ratio = r_mean / max(b_mean, 1.0)
+        warm_dominant = color_ratio >= 1.1 and r_mean >= 15.0
 
-        return (has_dark_border and circle_ratio >= self._heuristic_threshold) or (
-            color_ratio >= 1.5 and r_mean >= 30.0
+        # --- Feature 3: bright circular disc (for grayscale / tightly-
+        # cropped / histogram-equalised fundus images) --------------------
+        # These images often have R ≈ G ≈ B (grayscale), causing Feature 2
+        # to fail, but they still have a bright central disc surrounded by a
+        # slightly darker periphery.
+        # Threshold 20.0 ≈ 8 % of the 0–255 scale – low enough to accept
+        # lightly lit fundus images while still rejecting near-black images.
+        has_bright_disc = inside_mean > 20.0 and circle_ratio >= 1.1
+
+        return (
+            # Classic dark-border fundus (most clinical / competition images)
+            (has_dark_border and circle_ratio >= self._heuristic_threshold)
+            # Warm-toned retinal image (typical orange fundus without border)
+            or warm_dominant
+            # Bright central disc: grayscale fundus or tightly-cropped images
+            or has_bright_disc
         )
 
 
