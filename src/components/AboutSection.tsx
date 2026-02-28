@@ -6,39 +6,39 @@ export const AboutSection = () => {
   const features = [
     {
       icon: Brain,
-      title: "Advanced AI Model",
-      description: "EfficientNetB0 CNN trained on 50,000+ retinal images",
+      title: "Transfer-Learning CNN",
+      description: "EfficientNet backbone fine-tuned on publicly available retinal datasets using transfer learning.",
       color: "text-neon-cyan",
       bgColor: "bg-neon-cyan/10"
     },
     {
       icon: Database,
-      title: "Quality Datasets",
-      description: "APTOS 2019 & ODIR datasets for comprehensive training",
+      title: "Public Datasets",
+      description: "Training pipelines for APTOS 2019 (DR grading) and ODIR-5K (multi-label ocular disease) datasets.",
       color: "text-neon-purple",
       bgColor: "bg-neon-purple/10"
     },
     {
       icon: Target,
-      title: "High Accuracy",
-      description: "89% accuracy on validation set with continuous improvement",
+      title: "Research Quality",
+      description: "Designed for research exploration. Accuracy depends on training data and configuration — see the disclaimer.",
       color: "text-neon-pink",
       bgColor: "bg-neon-pink/10"
     },
     {
       icon: Users,
       title: "Multiple Conditions",
-      description: "Detects diabetic retinopathy, glaucoma, cataracts, and AMD",
+      description: "Covers ODIR-5K categories: normal, diabetic retinopathy, glaucoma, cataract, AMD, hypertension, myopia, and other.",
       color: "text-neon-green",
       bgColor: "bg-neon-green/10"
     }
   ];
 
   const metrics = [
-    { label: "Training Images", value: "50,000+", color: "text-neon-cyan" },
-    { label: "Model Accuracy", value: "89%", color: "text-neon-purple" },
-    { label: "Diseases Detected", value: "4+", color: "text-neon-pink" },
-    { label: "Processing Time", value: "< 3s", color: "text-neon-green" }
+    { label: "Supported Datasets", value: "2", color: "text-neon-cyan" },
+    { label: "ODIR Conditions", value: "8", color: "text-neon-purple" },
+    { label: "DR Grades (APTOS)", value: "5", color: "text-neon-pink" },
+    { label: "Model Architecture", value: "EfficientNet", color: "text-neon-green" }
   ];
 
   return (
@@ -49,8 +49,8 @@ export const AboutSection = () => {
             About Our AI Technology
           </h2>
           <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-            Our AI system uses state-of-the-art deep learning algorithms trained on extensive medical datasets 
-            to provide accurate eye disease detection and analysis.
+            A research-grade deep learning system built with PyTorch, trained on public retinal 
+            image datasets. For educational and research use only — not a medical device.
           </p>
         </div>
 
@@ -103,9 +103,9 @@ export const AboutSection = () => {
               <div className="text-center">
                 <h4 className="font-semibold mb-3 text-neon-cyan">Model Architecture</h4>
                 <div className="space-y-2">
-                  <Badge variant="secondary" className="block">EfficientNetB0</Badge>
-                  <Badge variant="secondary" className="block">Input: 224x224</Badge>
-                  <Badge variant="secondary" className="block">Classes: 5</Badge>
+                  <Badge variant="secondary" className="block">EfficientNet-B0</Badge>
+                  <Badge variant="secondary" className="block">Input: 224×224</Badge>
+                  <Badge variant="secondary" className="block">PyTorch</Badge>
                 </div>
               </div>
               
@@ -113,25 +113,26 @@ export const AboutSection = () => {
                 <h4 className="font-semibold mb-3 text-neon-purple">Training Data</h4>
                 <div className="space-y-2">
                   <Badge variant="secondary" className="block">APTOS 2019</Badge>
-                  <Badge variant="secondary" className="block">ODIR Dataset</Badge>
+                  <Badge variant="secondary" className="block">ODIR-5K</Badge>
                   <Badge variant="secondary" className="block">Data Augmentation</Badge>
                 </div>
               </div>
               
               <div className="text-center">
-                <h4 className="font-semibold mb-3 text-neon-pink">Performance</h4>
+                <h4 className="font-semibold mb-3 text-neon-pink">Evaluation</h4>
                 <div className="space-y-2">
-                  <Badge variant="secondary" className="block">Accuracy: 89%</Badge>
-                  <Badge variant="secondary" className="block">F1-Score: 0.87</Badge>
-                  <Badge variant="secondary" className="block">AUC: 0.92</Badge>
+                  <Badge variant="secondary" className="block">Per-label AUC/F1</Badge>
+                  <Badge variant="secondary" className="block">Accuracy + Confusion Matrix</Badge>
+                  <Badge variant="secondary" className="block">Stratified Val Split</Badge>
                 </div>
               </div>
             </div>
             
             <div className="text-center pt-6 border-t border-border">
               <p className="text-muted-foreground">
-                Our model was trained using transfer learning on EfficientNetB0, fine-tuned specifically for retinal disease classification. 
-                The training process included extensive data augmentation and cross-validation to ensure robust performance across different image qualities and conditions.
+                This system uses transfer learning on EfficientNet-B0, fine-tuned for retinal image classification.
+                Model performance depends on the training dataset you supply.
+                Evaluation metrics (AUC, F1, accuracy) are printed during training.
               </p>
             </div>
           </CardContent>

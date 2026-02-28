@@ -97,6 +97,25 @@ export const ResultsSection = ({ result, uploadedImage, isLoading }: ResultsSect
                   />
                 </div>
 
+                {/* ODIR multi-label breakdown */}
+                {result.odir_predictions && result.odir_predictions.length > 0 && (
+                  <div className="space-y-2 pt-2">
+                    <p className="text-sm font-medium">All condition scores:</p>
+                    {result.odir_predictions
+                      .slice()
+                      .sort((a, b) => b.score - a.score)
+                      .map((pred) => (
+                        <div key={pred.label} className="flex items-center gap-2 text-xs">
+                          <span className="w-40 truncate text-muted-foreground">{pred.label}</span>
+                          <Progress value={pred.score * 100} className="h-1.5 flex-1" />
+                          <span className="w-10 text-right text-muted-foreground">
+                            {Math.round(pred.score * 100)}%
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4 pt-4">
                   <Button
                     variant="outline"
@@ -126,20 +145,19 @@ export const ResultsSection = ({ result, uploadedImage, isLoading }: ResultsSect
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm">Model Used</span>
-                    <Badge variant="secondary">EfficientNetB0</Badge>
-                  </div>
+                  {result.model_version && (
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm">Model Version</span>
+                      <Badge variant="secondary">{result.model_version}</Badge>
+                    </div>
+                  )}
                   
-                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm">Processing Time</span>
-                    <span className="text-sm text-neon-cyan">2.3s</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <span className="text-sm">Image Quality</span>
-                    <span className="text-sm text-neon-green">Excellent</span>
-                  </div>
+                  {result.aptos_dr_grade && (
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm">DR Grade (APTOS)</span>
+                      <span className="text-sm text-neon-cyan">{result.aptos_dr_grade}</span>
+                    </div>
+                  )}
                   
                   <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                     <span className="text-sm">Analysis Date</span>
@@ -155,6 +173,9 @@ export const ResultsSection = ({ result, uploadedImage, isLoading }: ResultsSect
                       : "Please consult with an eye care professional for proper evaluation and treatment options. This AI analysis is for informational purposes only."
                     }
                   </p>
+                  {result.notes && (
+                    <p className="text-xs text-muted-foreground/70 mt-2 italic">{result.notes}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>

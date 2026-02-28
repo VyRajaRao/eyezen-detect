@@ -6,30 +6,55 @@ import { AboutSection } from "@/components/AboutSection";
 import { DisclaimerSection } from "@/components/DisclaimerSection";
 import { Footer } from "@/components/Footer";
 import { ChatBot } from "@/components/ChatBot";
+import { useToast } from "@/hooks/use-toast";
 import type { PredictionResult } from "@/types";
 
 const Index = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [predictionResult, setPredictionResult] = useState<PredictionResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleImageUpload = async (imageFile: File, imageUrl: string) => {
     setUploadedImage(imageUrl);
     setIsLoading(true);
-    
-    // Simulate API call for now
-    setTimeout(() => {
-      const mockResults = [
-        { disease: "Diabetic Retinopathy", confidence: 0.89 },
-        { disease: "Glaucoma", confidence: 0.76 },
-        { disease: "Cataract", confidence: 0.92 },
-        { disease: "Normal", confidence: 0.95 }
-      ];
-      
-      const result = mockResults[Math.floor(Math.random() * mockResults.length)];
+
+    const formData = new FormData();
+    formData.append("file", imageFile);
+
+    try {
+      const response = await fetch("/api/predict", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const message =
+          errorData?.message ||
+          (response.status === 400
+            ? "The uploaded image does not appear to be a retinal fundus image."
+            : "Prediction failed. Please try again.");
+        toast({
+          title: "Analysis failed",
+          description: message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await response.json();
       setPredictionResult(result);
+    } catch (_err) {
+      toast({
+        title: "Connection error",
+        description: "Could not reach the analysis service. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 3000);
+    }
   };
 
   const resetAnalysis = () => {

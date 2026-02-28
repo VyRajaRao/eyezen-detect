@@ -33,7 +33,7 @@ export const HeroSection = () => {
         <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
           <div className="flex items-center gap-2 bg-card/50 backdrop-blur-sm px-4 py-2 rounded-full border border-neon-cyan/20">
             <div className="w-2 h-2 bg-neon-cyan rounded-full animate-pulse" />
-            89% Accuracy
+            Transfer-Learning CNN
           </div>
           <div className="flex items-center gap-2 bg-card/50 backdrop-blur-sm px-4 py-2 rounded-full border border-neon-purple/20">
             <div className="w-2 h-2 bg-neon-purple rounded-full animate-pulse" />
